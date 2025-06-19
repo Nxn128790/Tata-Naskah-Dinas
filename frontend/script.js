@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Bagian Jam & Tanggal (Tidak Berubah) ---
+    // --- Bagian Jam & Tanggal ---
     function updateDateTime() {
         const now = new Date();
         const formattedDate = now.toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '/');
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(updateDateTime, 1000);
     updateDateTime();
 
-    // --- Bagian Sidebar Toggle (Tidak Berubah) ---
+    // --- Bagian Sidebar Toggle ---
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
     const mainContainer = document.querySelector('.main-container');
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // --- Bagian Submenu (Tidak Berubah) ---
+    // --- Bagian Submenu ---
     const submenuItems = document.querySelectorAll('.has-submenu > .nav-item');
     submenuItems.forEach(item => {
         item.addEventListener('click', function(e) {
@@ -108,8 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fungsi untuk menambahkan blok input pegawai baru ke formulir
     function addPegawaiInputBlock() {
         const container = document.getElementById('pegawai-input-container');
-        // Gunakan jumlah elemen anak sebagai indeks untuk ID unik
-        const blockIndex = container.children.length;
+        const blockIndex = container.children.length; // Gunakan jumlah elemen anak sebagai indeks untuk ID unik
 
         const blockHtml = `
             <div class="pegawai-block" style="border: 1px solid #eee; padding: 15px; margin-bottom: 15px; border-radius: 8px;">
@@ -139,10 +138,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 ${blockIndex > 0 ? '<button type="button" class="remove-pegawai-btn" style="background-color: #dc3545;">Hapus Pegawai Ini</button>' : ''}
             </div>
         `;
-        // Menambahkan blok HTML ke dalam container
         container.insertAdjacentHTML('beforeend', blockHtml);
 
-        // Mengisi dropdown di blok baru dengan data master pegawai
         const newSelect = document.getElementById(`selectNamaPegawai_${blockIndex}`);
         masterPegawaiData.forEach(pegawai => {
             const option = document.createElement('option');
@@ -160,7 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (selectedPegawai) {
                 // Mengisi field display dengan data yang ditemukan
                 document.getElementById(`namaPegawaiDisplay_${idx}`).value = selectedPegawai.Nama;
-                document.getElementById(`pangkatPegawaiDisplay_${idx}`).value = selectedPegawai["Pangkat / Golongan"]; // Akses dengan string karena ada spasi di nama kunci JSON
+                document.getElementById(`pangkatPegawaiDisplay_${idx}`).value = selectedPegawai["Pangkat / Golongan"];
                 document.getElementById(`nipPegawaiDisplay_${idx}`).value = selectedPegawai.NIP;
                 document.getElementById(`jabatanPegawaiDisplay_${idx}`).value = selectedPegawai.Jabatan;
             } else {
@@ -188,7 +185,6 @@ document.addEventListener('DOMContentLoaded', function() {
             masterPegawaiData = await response.json(); // Menyimpan data ke variabel global masterPegawaiData
         } catch (error) {
             console.error('Gagal memuat data pegawai master:', error);
-            // Anda bisa menampilkan pesan error di UI jika data gagal dimuat
         }
     }
 
@@ -214,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const pegawaiBlocks = document.querySelectorAll('.pegawai-block');
                 const daftarPegawai = []; // Array untuk menyimpan data setiap pegawai
 
-                pegawaiBlocks.forEach((block, index) => {
+                pegawaiBlocks.forEach((block, index) => { // 'index' ini adalah nomor 0, 1, 2, dst.
                     const nama = block.querySelector(`[name="namapegawai_${index}"]`).value;
                     const pangkat = block.querySelector(`[name="pangkatpegawai_${index}"]`).value;
                     const nip = block.querySelector(`[name="nippegawai_${index}"]`).value;
@@ -222,6 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     if (nama && nip) { // Hanya tambahkan ke array jika Nama dan NIP terisi
                         daftarPegawai.push({
+                            nomorUrut: index + 1, // <--- BARU: Nomor urut dimulai dari 1
                             namapegawai: nama,
                             pangkatpegawai: pangkat,
                             nippegawai: nip,
@@ -239,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const formData = new FormData(sptForm);
                 const data = {
-                    // Kirim array daftarPegawai ke backend
+                    // Kirim array daftarPegawai
                     daftarPegawai: daftarPegawai,
                     jenispengawasan: formData.get('jenispengawasan'),
                     opd: formData.get('opd'),
@@ -296,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Loop melalui setiap link di submenu (Tidak Berubah)
+    // Loop melalui setiap link di submenu
     submenuLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
