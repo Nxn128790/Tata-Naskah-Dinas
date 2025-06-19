@@ -1,62 +1,55 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Bagian Jam & Tanggal ---
+    // --- Bagian Jam & Tanggal (Tidak Berubah) ---
     function updateDateTime() {
         const now = new Date();
-        // Mengambil tanggal dengan format DD/MM/YYYY
         const formattedDate = now.toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '/');
-        // Mengambil waktu dengan format HH:MM
         const formattedTime = now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'});
         document.getElementById('datetime').textContent = `${formattedTime} ${formattedDate}`;
     }
-    setInterval(updateDateTime, 1000); // Perbarui setiap detik
-    updateDateTime(); // Panggil sekali saat halaman dimuat
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
 
-    // --- Bagian Sidebar Toggle ---
+    // --- Bagian Sidebar Toggle (Tidak Berubah) ---
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
     const mainContainer = document.querySelector('.main-container');
 
-    // Logic untuk menyembunyikan sidebar di layar kecil secara default
     if (window.innerWidth <= 768) {
         sidebar.classList.add('hidden');
-        mainContainer.style.marginLeft = '0'; // Konten tidak terpengaruh jika sidebar tersembunyi
+        mainContainer.style.marginLeft = '0';
     } else {
         sidebar.classList.remove('hidden');
-        mainContainer.style.marginLeft = '250px'; // Set margin awal untuk desktop
     }
 
     sidebarToggle.addEventListener('click', function() {
         sidebar.classList.toggle('hidden');
-        // Hanya sesuaikan margin konten jika bukan layar mobile (lebar > 768px)
         if (window.innerWidth > 768) {
             if (sidebar.classList.contains('hidden')) {
-                mainContainer.style.marginLeft = '60px'; // Lebar sidebar yang disembunyikan
+                mainContainer.style.marginLeft = '60px';
             } else {
-                mainContainer.style.marginLeft = '250px'; // Lebar sidebar yang terbuka
+                mainContainer.style.marginLeft = '250px';
             }
         }
     });
 
-    // Responsivitas Sidebar saat ukuran jendela berubah
     window.addEventListener('resize', function() {
         if (window.innerWidth <= 768) {
-            sidebar.classList.add('hidden'); // Selalu sembunyikan sidebar di mobile
+            sidebar.classList.add('hidden');
             mainContainer.style.marginLeft = '0';
         } else {
-            sidebar.classList.remove('hidden'); // Selalu tampilkan di desktop
+            sidebar.classList.remove('hidden');
             mainContainer.style.marginLeft = '250px';
         }
     });
 
-    // --- Bagian Submenu ---
+    // --- Bagian Submenu (Tidak Berubah) ---
     const submenuItems = document.querySelectorAll('.has-submenu > .nav-item');
     submenuItems.forEach(item => {
         item.addEventListener('click', function(e) {
-            e.preventDefault(); // Mencegah link default
+            e.preventDefault();
             const parentLi = this.closest('.has-submenu');
-            parentLi.classList.toggle('active'); // Mengaktifkan/menonaktifkan submenu
+            parentLi.classList.toggle('active');
 
-            // Tutup submenu lain jika ada yang terbuka
             submenuItems.forEach(otherItem => {
                 const otherParentLi = otherItem.closest('.has-submenu');
                 if (otherParentLi !== parentLi && otherParentLi.classList.contains('active')) {
@@ -66,26 +59,36 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // --- Fungsionalitas Formulir Dinamis (PENTING!) ---
+    // --- Fungsionalitas Formulir Dinamis (Diperbarui untuk Auto-fill dari database.json) ---
     const formContainer = document.getElementById('form-container');
     const submenuLinks = document.querySelectorAll('.submenu a');
 
-    // Template HTML untuk formulir SPT
+    // Template formulir dasar untuk SPT (Dengan dropdown dan field display)
     const sptFormHtml = `
         <div class="placeholder-card">
             <h2>Formulir Surat Perintah Tugas (SPT)</h2>
             <form id="spt-form">
                 <div class="form-group">
-                    <label for="namaPegawai">Nama Pegawai:</label>
-                    <input type="text" id="namaPegawai" name="namaPegawai" required>
+                    <label for="selectNamaPegawai">Pilih Nama Pegawai:</label>
+                    <select id="selectNamaPegawai" required>
+                        <option value="">-- Pilih Pegawai --</option>
+                        </select>
                 </div>
                 <div class="form-group">
-                    <label for="nip">NIP:</label>
-                    <input type="text" id="nip" name="nip" required>
+                    <label for="namaPegawaiDisplay">Nama Pegawai:</label>
+                    <input type="text" id="namaPegawaiDisplay" name="namaPegawai" readonly required>
                 </div>
                 <div class="form-group">
-                    <label for="jabatan">Jabatan:</label>
-                    <input type="text" id="jabatan" name="jabatan" required>
+                    <label for="pangkatGolonganDisplay">Pangkat / Golongan:</label>
+                    <input type="text" id="pangkatGolonganDisplay" name="pangkatGolongan" readonly required>
+                </div>
+                <div class="form-group">
+                    <label for="nipDisplay">NIP:</label>
+                    <input type="text" id="nipDisplay" name="nip" readonly required>
+                </div>
+                <div class="form-group">
+                    <label for="jabatanDisplay">Jabatan:</label>
+                    <input type="text" id="jabatanDisplay" name="jabatan" readonly required>
                 </div>
                 <div class="form-group">
                     <label for="tujuan">Tujuan Perjalanan Dinas:</label>
@@ -105,33 +108,70 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     `;
 
-    // Template HTML untuk formulir SPPD (saat ini masih placeholder)
+    // Template formulir dasar untuk SPPD (bisa dikembangkan nanti)
     const sppdFormHtml = `
         <div class="placeholder-card">
             <h2>Formulir Surat Perintah Perjalanan Dinas (SPPD)</h2>
-            <p>Formulir SPPD akan datang di sini. Untuk saat ini, Anda bisa mencoba formulir SPT.</p>
+            <p>Formulir SPPD akan datang di sini. Untuk saat ini, Anda bisa melihat formulir SPT.</p>
         </div>
     `;
 
-    // Loop melalui setiap link di submenu
-    submenuLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const templateType = this.dataset.template; // Mengambil nilai dari atribut data-template (misal: 'spt')
+    // Fungsi untuk memuat data pegawai dari JSON dan mengatur auto-fill
+    async function loadPegawaiDataAndSetupAutofill() {
+        let pegawaiData = []; // Deklarasikan di sini agar bisa diakses di luar try-catch
 
-            formContainer.innerHTML = ''; // Kosongkan kontainer formulir sebelumnya
+        try {
+            // Mengambil file JSON dari folder 'frontend'
+            const response = await fetch('/database.json');
+            pegawaiData = await response.json(); // Simpan data ke variabel pegawaiData
 
-            if (templateType === 'spt') {
-                formContainer.innerHTML = sptFormHtml; // Masukkan HTML formulir SPT
-                setupSptFormSubmission(); // Panggil fungsi untuk menangani submit form SPT
-            } else if (templateType === 'sppd') {
-                formContainer.innerHTML = sppdFormHtml; // Masukkan HTML formulir SPPD
-            }
-        });
-    });
+            const selectNamaPegawai = document.getElementById('selectNamaPegawai');
+            const namaPegawaiDisplay = document.getElementById('namaPegawaiDisplay');
+            const pangkatGolonganDisplay = document.getElementById('pangkatGolonganDisplay');
+            const nipDisplay = document.getElementById('nipDisplay');
+            const jabatanDisplay = document.getElementById('jabatanDisplay');
 
-    // Fungsi untuk menangani proses pengiriman formulir SPT ke Netlify Function
+            // Isi dropdown dengan nama-nama pegawai
+            pegawaiData.forEach(pegawai => {
+                const option = document.createElement('option');
+                option.value = pegawai.NIP; // Gunakan NIP sebagai nilai unik untuk setiap opsi
+                option.textContent = pegawai.Nama;
+                selectNamaPegawai.appendChild(option);
+            });
+
+            // Tambahkan event listener untuk auto-fill saat nama dipilih
+            selectNamaPegawai.addEventListener('change', function() {
+                const selectedNIP = this.value;
+                // Temukan objek pegawai yang cocok berdasarkan NIP
+                const selectedPegawai = pegawaiData.find(pegawai => pegawai.NIP === selectedNIP);
+
+                if (selectedPegawai) {
+                    // Isi field display dengan data yang ditemukan
+                    namaPegawaiDisplay.value = selectedPegawai.Nama;
+                    pangkatGolonganDisplay.value = selectedPegawai["Pangkat / Golongan"]; // Akses dengan string karena ada spasi
+                    nipDisplay.value = selectedPegawai.NIP;
+                    jabatanDisplay.value = selectedPegawai.Jabatan;
+                } else {
+                    // Kosongkan field jika "-- Pilih Pegawai --" atau NIP tidak ditemukan
+                    namaPegawaiDisplay.value = '';
+                    pangkatGolonganDisplay.value = '';
+                    nipDisplay.value = '';
+                    jabatanDisplay.value = '';
+                }
+            });
+
+        } catch (error) {
+            console.error('Gagal memuat data pegawai:', error);
+            // Anda bisa menampilkan pesan error di UI jika perlu, misal:
+            // formContainer.innerHTML = '<p style="color: red;">Gagal memuat data pegawai. Silakan coba lagi nanti.</p>';
+        }
+    }
+
+    // Fungsi untuk menangani submit formulir SPT
     function setupSptFormSubmission() {
+        // Pastikan loadPegawaiDataAndSetupAutofill dipanggil setelah form SPT dimuat
+        loadPegawaiDataAndSetupAutofill();
+
         const sptForm = document.getElementById('spt-form');
         const responseMessage = document.getElementById('response-message');
 
@@ -139,18 +179,21 @@ document.addEventListener('DOMContentLoaded', function() {
             sptForm.addEventListener('submit', async function(e) {
                 e.preventDefault(); // Mencegah halaman reload saat submit
 
-                const formData = new FormData(sptForm); // Mengambil data dari formulir
+                const formData = new FormData(sptForm);
                 const data = {};
-                for (let [key, value] of formData.entries()) {
-                    data[key] = value; // Mengubah FormData menjadi objek JavaScript biasa
-                }
+                // Mengambil nilai dari input tersembunyi/readonly yang sudah diisi oleh JavaScript
+                data['namaPegawai'] = formData.get('namaPegawai');
+                data['pangkatGolongan'] = formData.get('pangkatGolongan'); // Ambil dari input tersembunyi
+                data['nip'] = formData.get('nip');
+                data['jabatan'] = formData.get('jabatan');
+                data['tujuan'] = formData.get('tujuan');
+                data['tanggalBerangkat'] = formData.get('tanggalBerangkat');
+                data['tanggalKembali'] = formData.get('tanggalKembali');
 
                 responseMessage.textContent = 'Membuat dokumen... Mohon tunggu.';
                 responseMessage.style.color = 'orange';
 
                 try {
-                    // KAMI AKAN PANGGIL NETLIFY FUNCTION DI SINI!
-                    // '/.netlify/functions/generate-document' adalah path default untuk Netlify Function
                     const response = await fetch('/.netlify/functions/generate-document', {
                         method: 'POST', // Mengirim data menggunakan metode POST
                         headers: {
@@ -160,12 +203,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
 
                     if (!response.ok) { // Jika ada kesalahan HTTP (misal 404, 500)
-                        const errorText = await response.text();
-                        throw new Error(`HTTP error! Status: ${response.status}. Pesan: ${errorText}`);
+                        const errorBody = await response.json(); // Coba ambil JSON error
+                        throw new Error(`HTTP error! Status: ${response.status}. Pesan: ${errorBody.message || JSON.stringify(errorBody)}`);
                     }
 
                     // Mengambil respons dari Netlify Function sebagai Blob (binary data)
-                    // Karena kita akan mengembalikan file DOCX langsung dari Function
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob); // Membuat URL sementara dari Blob
 
@@ -182,10 +224,27 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 } catch (error) {
                     console.error('Error saat membuat dokumen:', error);
-                    responseMessage.textContent = `Terjadi kesalahan: ${error.message}. Cek konsol browser untuk detail.`;
+                    responseMessage.textContent = `Terjadi kesalahan: ${error.message}`;
                     responseMessage.style.color = 'red';
                 }
             });
         }
     }
+
+    // Loop melalui setiap link di submenu
+    submenuLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const templateType = this.dataset.template;
+
+            formContainer.innerHTML = ''; // Kosongkan kontainer formulir sebelumnya
+
+            if (templateType === 'spt') {
+                formContainer.innerHTML = sptFormHtml; // Masukkan HTML formulir SPT
+                setupSptFormSubmission(); // Panggil fungsi untuk menangani submit form SPT
+            } else if (templateType === 'sppd') {
+                formContainer.innerHTML = sppdFormHtml; // Masukkan HTML formulir SPPD
+            }
+        });
+    });
 });

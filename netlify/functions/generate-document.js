@@ -32,7 +32,7 @@ exports.handler = async function(event, context) {
         return {
             statusCode: 500,
             body: JSON.stringify({
-                message: 'Gagal membaca file template. Pastikan template_spt.docx ada.',
+                message: 'Gagal membaca file template. Pastikan template_spt.docx ada dan terunggah.',
                 error: readError.message,
                 templatePathAttempted: TEMPLATE_PATH // Memberikan informasi jalur yang dicoba
             }),
@@ -62,13 +62,13 @@ exports.handler = async function(event, context) {
         });
 
         // Mengisi data ke dalam template DOCX.
-        // Kunci (keys) di sini (misalnya 'namaPegawai', 'nip') harus SAMA PERSIS
-        // dengan nama placeholder yang Anda tulis di file 'template_spt.docx' Anda
-        // (misalnya {namaPegawai}, {nip}).
+        // Kunci (keys) di sini harus SAMA PERSIS dengan nama placeholder di template_spt.docx Anda,
+        // dan juga sama dengan nama 'name' di input form HTML Anda.
         doc.setData({
-            namaPegawai: data.namaPegawai || '[Nama Pegawai Kosong]', // Jika data dari formulir tidak ada, gunakan nilai default ini
-            nip: data.nip || '[NIP Kosong]',
-            jabatan: data.jabatan || '[Jabatan Kosong]',
+            namaPegawai: data.namaPegawai || '[Nama Pegawai Kosong]', // Ambil dari form
+            nip: data.nip || '[NIP Kosong]',                       // Ambil dari form
+            pangkatGolongan: data.pangkatGolongan || '[Pangkat/Golongan Kosong]', // Ambil dari form
+            jabatan: data.jabatan || '[Jabatan Kosong]',             // Ambil dari form
             tujuan: data.tujuan || '[Tujuan Kosong]',
             tanggalBerangkat: data.tanggalBerangkat || '[Tanggal Berangkat Kosong]',
             tanggalKembali: data.tanggalKembali || '[Tanggal Kembali Kosong]',
