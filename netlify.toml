@@ -1,0 +1,14 @@
+[build]
+  publish = "frontend" # Memberitahu Netlify bahwa file situs Anda ada di folder 'frontend/'
+  functions = "netlify/functions" # Memberitahu Netlify di mana mencari Netlify Functions Anda
+
+[[redirects]]
+  from = "/api/*" # Setiap permintaan ke URL ini
+  to = "/.netlify/functions/:splat" # Akan diarahkan ke Netlify Function Anda
+  status = 200 # Ini berarti pengalihan berhasil
+
+[functions]
+  # Direktori ini harus ada di root folder fungsi (netlify/functions/)
+  # Semua file di dalam direktori ini akan disertakan dalam bundle fungsi
+  included_files = ["netlify/functions/template_spt.docx"]
+  node_bundler = "esbuild" # Pastikan bundler menggunakan esbuild (default modern)
