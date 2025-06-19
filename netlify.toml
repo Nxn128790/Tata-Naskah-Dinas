@@ -1,14 +1,20 @@
 [build]
-  publish = "frontend" # Memberitahu Netlify bahwa file situs Anda ada di folder 'frontend/'
-  functions = "netlify/functions" # Memberitahu Netlify di mana mencari Netlify Functions Anda
+  # Direktori ini memberitahu Netlify di mana file-file situs (HTML, CSS, JavaScript) Anda berada.
+  publish = "frontend"
+  # Direktori ini memberitahu Netlify di mana mencari Netlify Functions Anda.
+  functions = "netlify/functions"
 
+# Bagian ini mengkonfigurasi pengalihan (redirects).
+# Ini penting agar permintaan dari front-end Anda (misalnya ke /api/generate-document)
+# dapat diarahkan dengan benar ke Netlify Function Anda.
 [[redirects]]
-  from = "/api/*" # Setiap permintaan ke URL ini
-  to = "/.netlify/functions/:splat" # Akan diarahkan ke Netlify Function Anda
-  status = 200 # Ini berarti pengalihan berhasil
+  from = "/api/*" # Setiap permintaan yang datang ke jalur ini di situs Anda
+  to = "/.netlify/functions/:splat" # Akan diarahkan ke Netlify Function yang sesuai
+  status = 200 # Kode status 200 menunjukkan pengalihan berhasil
 
+# Bagian ini mengkonfigurasi Netlify Functions.
 [functions]
-  # Direktori ini harus ada di root folder fungsi (netlify/functions/)
-  # Semua file di dalam direktori ini akan disertakan dalam bundle fungsi
-  included_files = ["netlify/functions/template_spt.docx"]
-  node_bundler = "esbuild" # Pastikan bundler menggunakan esbuild (default modern)
+  # Kita tidak lagi perlu menyertakan file template secara eksplisit di sini,
+  # karena kita sudah menyematkannya langsung ke dalam kode JavaScript fungsi.
+  # Namun, kita tetap menentukan bundler yang digunakan.
+  node_bundler = "esbuild" # Menggunakan 'esbuild' adalah default modern yang direkomendasikan untuk bundling fungsi Node.js
