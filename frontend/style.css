@@ -1,0 +1,304 @@
+/* Variabel Warna */
+:root {
+    --primary-color: #0056b3; /* Biru Gelap Modern */
+    --secondary-color: #e0e0e0; /* Abu-abu Terang */
+    --text-color: #333;
+    --light-text-color: #f8f8f8;
+    --border-color: #ddd;
+    --bg-color-light: #f4f7f6;
+    --bg-color-dark: #2c3e50; /* Untuk sidebar tertutup */
+}
+
+/* Reset dan Tipografi Dasar */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--bg-color-light);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Header */
+.header {
+    background-color: var(--primary-color);
+    color: var(--light-text-color);
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1000; /* Pastikan di atas elemen lain */
+}
+
+.header-left, .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-left .fas {
+    font-size: 1.5rem;
+}
+
+#datetime {
+    font-weight: 500;
+}
+
+/* Main Container */
+.main-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden; /* Mencegah konten meluap saat sidebar terbuka */
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    background-color: #ffffff;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+    padding-top: 1rem;
+    transition: width 0.3s ease, transform 0.3s ease;
+    flex-shrink: 0; /* Mencegah sidebar menyusut */
+    position: relative; /* Untuk posisi toggle */
+    z-index: 900;
+}
+
+.sidebar.hidden {
+    width: 60px;
+}
+
+.sidebar-toggle {
+    position: absolute;
+    top: 1rem;
+    right: -15px; /* Sesuaikan untuk posisi yang rapi */
+    background-color: var(--primary-color);
+    color: var(--light-text-color);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 1001; /* Di atas sidebar */
+    transition: transform 0.3s ease;
+}
+
+.sidebar.hidden .sidebar-toggle {
+    transform: rotate(180deg);
+}
+
+.navigation ul {
+    list-style: none;
+    padding-top: 3rem; /* Memberi ruang untuk tombol toggle */
+}
+
+.navigation ul li {
+    margin-bottom: 0.5rem;
+}
+
+.navigation .nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1.5rem;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    border-left: 5px solid transparent;
+}
+
+.navigation .nav-item:hover {
+    background-color: var(--secondary-color);
+    color: var(--primary-color);
+    border-left-color: var(--primary-color);
+}
+
+.navigation .nav-item .fas {
+    margin-right: 10px;
+    font-size: 1.1rem;
+}
+
+.sidebar.hidden .navigation .nav-item span,
+.sidebar.hidden .navigation .submenu {
+    display: none;
+}
+
+.sidebar.hidden .navigation .nav-item .submenu-arrow {
+    display: none; /* Sembunyikan panah saat sidebar tersembunyi */
+}
+
+/* Submenu */
+.submenu {
+    list-style: none;
+    background-color: #f0f0f0;
+    padding-left: 2rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.has-submenu.active .submenu {
+    max-height: 200px; /* Cukup besar untuk menampung item */
+}
+
+.submenu li a {
+    display: flex;
+    align-items: center;
+    padding: 0.6rem 1.5rem;
+    color: var(--text-color);
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+    font-size: 0.9rem;
+}
+
+.submenu li a:hover {
+    background-color: var(--border-color);
+    color: var(--primary-color);
+}
+
+.submenu li a .fas {
+    margin-right: 8px;
+    font-size: 0.9rem;
+}
+
+/* Konten Utama */
+.content {
+    flex-grow: 1;
+    padding: 2rem;
+    background-color: #fcfcfc;
+    overflow-y: auto; /* Jika konten melebihi layar */
+}
+
+.content h1 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.placeholder-card {
+    background-color: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.placeholder-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 0.8rem;
+}
+
+/* Responsif */
+@media (max-width: 768px) {
+    .header {
+        padding: 1rem;
+    }
+
+    .header-left span {
+        display: none; /* Sembunyikan teks "Welcome" di layar kecil */
+    }
+
+    .sidebar {
+        position: fixed;
+        left: 0;
+        height: 100%;
+        transform: translateX(-100%); /* Sembunyikan sidebar di luar layar */
+        width: 250px;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .sidebar.hidden {
+        transform: translateX(0); /* Sidebar terlihat saat 'hidden' dihilangkan di mobile */
+    }
+
+    .sidebar-toggle {
+        left: unset;
+        right: 1rem; /* Pindahkan toggle ke kanan di mobile */
+        top: 1rem;
+        z-index: 1002;
+    }
+
+    .sidebar.hidden .sidebar-toggle {
+        transform: rotate(0deg); /* Reset rotasi di mobile */
+    }
+
+    .main-container {
+        margin-left: 0; /* Reset margin */
+    }
+
+    .content {
+        padding: 1rem;
+    }
+}
+
+/* Tambahan untuk panah submenu */
+.submenu-arrow {
+    margin-left: auto; /* Dorong panah ke kanan */
+    transition: transform 0.3s ease;
+}
+
+.has-submenu.active .submenu-arrow {
+    transform: rotate(180deg);
+}
+
+/* Styling Formulir */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group textarea {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: border-color 0.2s ease;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="date"]:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.2);
+}
+
+.submit-button {
+    background-color: var(--primary-color);
+    color: var(--light-text-color);
+    padding: 0.8rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.submit-button:hover {
+    background-color: #004494; /* Sedikit lebih gelap */
+    transform: translateY(-1px);
+}
+
+.submit-button:active {
+    transform: translateY(0);
+}
