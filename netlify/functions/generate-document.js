@@ -20,8 +20,7 @@ exports.handler = async function(event, context) {
 
     let content;
     try {
-        // Coba baca template. Ini akan berfungsi di lingkungan Netlify Function
-        // karena kita akan memastikan file ini di-bundle dengan benar.
+        // Coba baca template dari jalur yang ditentukan
         content = fs.readFileSync(TEMPLATE_PATH, 'binary');
     } catch (readError) {
         console.error("Error membaca template_spt.docx:", readError);
@@ -30,7 +29,7 @@ exports.handler = async function(event, context) {
             body: JSON.stringify({
                 message: 'Gagal membaca file template.',
                 error: readError.message,
-                templatePathChecked: TEMPLATE_PATH // Tambahkan ini untuk debugging
+                templatePathChecked: TEMPLATE_PATH
             }),
         };
     }
@@ -39,7 +38,7 @@ exports.handler = async function(event, context) {
         const data = JSON.parse(event.body);
 
         const zip = new PizZip(content);
-        const doc = new Docxtemplater(zip, {
+        const doc = new new Docxtemplater(zip, {
             paragraphLoop: true,
             linebreaks: true,
             parser: (tag) => {
