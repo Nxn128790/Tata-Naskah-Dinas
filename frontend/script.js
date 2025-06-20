@@ -72,7 +72,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <h2>Formulir Surat Tugas</h2>
             <form id="spt-form">
                 <div id="pegawai-input-container">
-                    </div>
+                    <!-- Blok input pegawai akan di-generate di sini -->
+                </div>
                 <button type="button" id="toggle-pegawai-btn" class="submit-button" style="background-color: #007bff; margin-bottom: 15px;">Tambah Pegawai</button>
                 
                 <div class="form-group">
@@ -339,17 +340,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         throw new Error(`HTTP error! Status: ${response.status}. Pesan: ${errorBody.message || JSON.stringify(errorBody)}`);
                     }
 
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'Surat_Tugas.docx';
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(url);
+                    // JANGAN lagi berharap dokumen Word di sini, hanya respons JSON sederhana
+                    const result = await response.json(); // Ambil respons sebagai JSON
 
-                    responseMessage.textContent = 'Dokumen berhasil dibuat dan diunduh!';
+                    responseMessage.textContent = result.message || 'Respons sukses tanpa pesan.';
                     responseMessage.style.color = 'green';
 
                 } catch (error) {
