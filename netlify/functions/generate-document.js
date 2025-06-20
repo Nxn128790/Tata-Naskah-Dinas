@@ -39,12 +39,25 @@ exports.handler = async function(event, context) {
         const data = JSON.parse(event.body);
 
         const zip = new PizZip(content);
-        const doc = new Docxtemplater(zip, { // Baris ini sudah benar (hanya satu 'new')
+        const doc = new Docxtemplater(zip, {
             paragraphLoop: true, // Penting untuk perulangan paragraf
             linebreaks: true,
+            // Perubahan di sini: Menggunakan parser bawaan Docxtemplater yang lebih canggih.
+            // Ini diperlukan untuk menangani tag khusus seperti @@+1.
             parser: (tag) => {
+                const parse = Docxtemplater.L.getParser(tag, {
+                    // Konfigurasi default L.getParser
+                    // Anda bisa menambahkan opsi kustom jika diperlukan,
+                    // tetapi untuk @@+1, ini seharusnya cukup.
+                });
                 return {
-                    get(scope) {
+                    get: (scope) => {
+                        // Jika tag adalah "@@+1", kita harus menangani ini secara khusus
+                        // atau biarkan parser bawaan Docxtemplater menanganinya.
+                        if (tag.startsWith('@@')) {
+                             // Ini adalah cara Docxtemplater menangani tag internal seperti @ @
+                             return parse(scope);
+                        }
                         return scope[tag];
                     }
                 };
@@ -52,7 +65,7 @@ exports.handler = async function(event, context) {
         });
 
         // ISI DATA KE TEMPLATE
-        // 'daftarPegawai' sekarang adalah sebuah array yang berisi objek-objek pegawai
+        // 'daftarPegawai' adalah sebuah array yang berisi objek-objek pegawai
         doc.setData({
             daftarPegawai: data.daftarPegawai || [], // Data array untuk perulangan
             jenispengawasan: data.jenispengawasan || '[Jenis Pengawasan Kosong]',
