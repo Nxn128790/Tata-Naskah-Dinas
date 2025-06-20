@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const submenuLinks = document.querySelectorAll('.submenu a');
 
     // Maksimal jumlah pegawai yang didukung template (sesuaikan dengan template_spt.docx)
-    const MAX_PEGAWAI = 10; 
+    const MAX_PEGAWAI = 3; // <--- UBAH INI MENJADI 3
 
     // Template HTML untuk formulir Surat Tugas (SPT)
     const sptFormHtml = `
