@@ -7,6 +7,9 @@ const fs = require('fs');
 const TEMPLATE_FILE_NAME = 'template_spt.docx';
 const TEMPLATE_PATH = path.resolve(__dirname, TEMPLATE_FILE_NAME);
 
+// Maksimal jumlah pegawai yang didukung template (harus sama dengan MAX_PEGAWAI di script.js)
+const MAX_PEGAWAI = 10; 
+
 exports.handler = async function(event, context) {
     if (event.httpMethod !== 'POST') {
         return {
@@ -37,30 +40,24 @@ exports.handler = async function(event, context) {
         const doc = new Docxtemplater(zip, {
             paragraphLoop: true,
             linebreaks: true,
-            // Parser standar yang akan bekerja dengan placeholder nama tunggal dan tag kondisional (.{tag})
             parser: (tag) => {
-                const parse = Docxtemplater.L.getParser(tag, {
-                    // Konfigurasi default L.getParser, mungkin diperlukan untuk tag kondisional
-                });
+                const parse = Docxtemplater.L.getParser(tag, {});
                 return {
                     get: (scope) => {
-                        // Jika tag adalah tag internal Docxtemplater, biarkan parser bawaan menanganinya
-                        if (tag.startsWith('@')) { // Handles @@+1, @foo, etc.
+                        if (tag.startsWith('@')) { // Menangani tag internal seperti @@+1 (jika digunakan)
                              return parse(scope);
                         }
-                        // Untuk tag kondisional seperti .namapegawai2, kita perlu memastikan data valid
-                        if (tag.startsWith('.')) {
-                            const actualTag = tag.substring(1); // Remove the dot
-                            return !!scope[actualTag]; // Return true if the data exists and is not empty/null/false
+                        if (tag.startsWith('.')) { // Menangani tag kondisional seperti .namapegawai2
+                            const actualTag = tag.substring(1); // Hapus titik di depan
+                            return !!scope[actualTag]; // Mengembalikan true jika data ada dan tidak kosong/null/false
                         }
-                        return scope[tag]; // Default: get value directly from scope
+                        return scope[tag]; // Mengembalikan nilai dari scope berdasarkan tag
                     }
                 };
             }
         });
 
         // ISI DATA KE TEMPLATE
-        // Data diterima sebagai individual key untuk setiap pegawai
         const templateData = {
             jenispengawasan: data.jenispengawasan || '[Jenis Pengawasan Kosong]',
             opd: data.opd || '[OPD Kosong]',
@@ -70,7 +67,7 @@ exports.handler = async function(event, context) {
             tahun: data.tahun || '[Tahun Kosong]',
         };
 
-        // Tambahkan data pegawai ke templateData
+        // Tambahkan data pegawai ke templateData (hingga MAX_PEGAWAI)
         for (let i = 1; i <= MAX_PEGAWAI; i++) {
             templateData[`namapegawai${i}`] = data[`namapegawai${i}`] || '';
             templateData[`pangkatpegawai${i}`] = data[`pangkatpegawai${i}`] || '';

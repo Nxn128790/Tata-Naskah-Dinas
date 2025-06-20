@@ -8,7 +8,5 @@
   status = 200
 
 [functions]
-  # Direktori ini memberitahu bundler Netlify untuk menyertakan file ini
-  # di dalam bundle fungsi. Path di sini RELATIF terhadap root proyek.
   included_files = ["netlify/functions/template_spt.docx"]
   node_bundler = "esbuild"
