@@ -340,10 +340,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         throw new Error(`HTTP error! Status: ${response.status}. Pesan: ${errorBody.message || JSON.stringify(errorBody)}`);
                     }
 
-                    // JANGAN lagi berharap dokumen Word di sini, hanya respons JSON sederhana
-                    const result = await response.json(); // Ambil respons sebagai JSON
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'Surat_Tugas.docx';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
 
-                    responseMessage.textContent = result.message || 'Respons sukses tanpa pesan.';
+                    responseMessage.textContent = 'Dokumen berhasil dibuat dan diunduh!';
                     responseMessage.style.color = 'green';
 
                 } catch (error) {

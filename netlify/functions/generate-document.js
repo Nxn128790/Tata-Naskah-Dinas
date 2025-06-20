@@ -1,4 +1,15 @@
-// generate-document.js (Fungsi Uji Sederhana)
+const Docxtemplater = require('docxtemplater');
+const PizZip = require('pizzip');
+const { DOMParser } = require('xmldom');
+const path = require('path');
+const fs = require('fs');
+
+const TEMPLATE_FILE_NAME = 'template_spt.docx';
+const TEMPLATE_PATH = path.resolve(__dirname, TEMPLATE_FILE_NAME);
+
+// Maksimal jumlah pegawai yang didukung template (harus sama dengan MAX_PEGAWAI di script.js)
+const MAX_PEGAWAI = 10; 
+
 exports.handler = async function(event, context) {
     if (event.httpMethod !== 'POST') {
         return {
@@ -7,26 +18,103 @@ exports.handler = async function(event, context) {
         };
     }
 
+    let content;
     try {
-        // Ini akan mencatat event yang masuk ke log fungsi Netlify (jika lognya berfungsi)
-        console.log("Fungsi generate-document dipanggil!");
-        console.log("Data yang diterima:", JSON.parse(event.body));
+        content = fs.readFileSync(TEMPLATE_PATH, 'binary');
+    } catch (readError) {
+        console.error("Error membaca template_spt.docx:", readError);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({
+                message: 'Gagal membaca file template. Pastikan template_spt.docx ada dan terunggah.',
+                error: readError.message,
+                templatePathAttempted: TEMPLATE_PATH
+            }),
+        };
+    }
 
-        // Kirim respons sukses yang sangat sederhana
+    try {
+        const data = JSON.parse(event.body);
+
+        const zip = new PizZip(content);
+        const doc = new Docxtemplater(zip, {
+            paragraphLoop: true,
+            linebreaks: true,
+            parser: (tag) => {
+                const parse = Docxtemplater.L.getParser(tag, {});
+                return {
+                    get: (scope) => {
+                        if (tag.startsWith('@')) { // Menangani tag internal seperti @@+1 (jika digunakan)
+                             return parse(scope);
+                        }
+                        if (tag.startsWith('.')) { // Menangani tag kondisional seperti .namapegawai2
+                            const actualTag = tag.substring(1); // Hapus titik di depan
+                            return !!scope[actualTag]; // Mengembalikan true jika data ada dan tidak kosong/null/false
+                        }
+                        return scope[tag]; // Mengembalikan nilai dari scope berdasarkan tag
+                    }
+                };
+            }
+        });
+
+        // ISI DATA KE TEMPLATE
+        const templateData = {
+            jenispengawasan: data.jenispengawasan || '[Jenis Pengawasan Kosong]',
+            opd: data.opd || '[OPD Kosong]',
+            tanggalmulai: data.tanggalmulai || '[Tanggal Mulai Kosong]',
+            tanggalberakhir: data.tanggalberakhir || '[Tanggal Berakhir Kosong]',
+            bulan: data.bulan || '[Bulan Kosong]',
+            tahun: data.tahun || '[Tahun Kosong]',
+        };
+
+        // Tambahkan data pegawai ke templateData (hingga MAX_PEGAWAI)
+        for (let i = 1; i <= MAX_PEGAWAI; i++) {
+            templateData[`namapegawai${i}`] = data[`namapegawai${i}`] || '';
+            templateData[`pangkatpegawai${i}`] = data[`pangkatpegawai${i}`] || '';
+            templateData[`nippegawai${i}`] = data[`nippegawai${i}`] || '';
+            templateData[`jabatanpegawai${i}`] = data[`jabatanpegawai${i}`] || '';
+        }
+
+        doc.setData(templateData);
+
+        try {
+            doc.render();
+        } catch (error) {
+            console.error("Error saat rendering dokumen:", error);
+            if (error.properties) {
+                console.error(JSON.stringify({
+                    message: error.message,
+                    name: error.name,
+                    stack: error.stack,
+                    properties: error.properties
+                }, null, 2));
+            }
+            return {
+                statusCode: 500,
+                body: JSON.stringify({ message: 'Gagal mengisi dokumen. Periksa template atau data yang dikirim.', error: error.message }),
+            };
+        }
+
+        const buf = doc.getZip().generate({
+            type: 'nodebuffer',
+            compression: 'DEFLATE',
+        });
+
         return {
             statusCode: 200,
             headers: {
-                "Content-Type": "application/json" // Kirim JSON biasa
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'Content-Disposition': 'attachment; filename="Surat_Tugas.docx"',
             },
-            body: JSON.stringify({ message: 'Fungsi berhasil dipanggil dan merespons! (Ini hanya uji coba)' })
+            body: buf.toString('base64'),
+            isBase64Encoded: true,
         };
 
     } catch (error) {
-        // Ini akan mencatat error jika ada masalah di awal eksekusi fungsi
-        console.error("Error di fungsi uji sederhana:", error);
+        console.error('Terjadi kesalahan umum di Netlify Function:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ message: 'Terjadi kesalahan di fungsi uji', error: error.message }),
+            body: JSON.stringify({ message: 'Terjadi kesalahan internal pada server.', error: error.message }),
         };
     }
 };
