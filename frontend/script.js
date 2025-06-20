@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Bagian Jam & Tanggal ---
+    // --- Bagian Jam & Tanggal (Tidak Berubah) ---
     function updateDateTime() {
         const now = new Date();
         const formattedDate = now.toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}).replace(/\//g, '/');
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(updateDateTime, 1000);
     updateDateTime();
 
-    // --- Bagian Sidebar Toggle ---
+    // --- Bagian Sidebar Toggle (Tidak Berubah) ---
     const sidebar = document.getElementById('sidebar');
     const sidebarToggle = document.getElementById('sidebarToggle');
     const mainContainer = document.querySelector('.main-container');
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // --- Bagian Submenu ---
+    // --- Bagian Submenu (Tidak Berubah) ---
     const submenuItems = document.querySelectorAll('.has-submenu > .nav-item');
     submenuItems.forEach(item => {
         item.addEventListener('click', function(e) {
@@ -59,9 +59,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // --- Fungsionalitas Formulir Dinamis (Diperbarui untuk Multiple Pegawai & Auto-fill) ---
+    // --- Fungsionalitas Formulir Dinamis (Diperbarui untuk N-Orang Statis Kondisional) ---
     const formContainer = document.getElementById('form-container');
     const submenuLinks = document.querySelectorAll('.submenu a');
+
+    // Maksimal jumlah pegawai yang didukung template (sesuaikan dengan template_spt.docx)
+    const MAX_PEGAWAI = 10; 
 
     // Template HTML untuk formulir Surat Tugas (SPT)
     const sptFormHtml = `
@@ -70,8 +73,8 @@ document.addEventListener('DOMContentLoaded', function() {
             <form id="spt-form">
                 <div id="pegawai-input-container">
                     </div>
-                <button type="button" id="add-pegawai-btn" class="submit-button" style="background-color: #28a745; margin-bottom: 15px;">Tambah Pegawai</button>
-
+                <button type="button" id="toggle-pegawai-btn" class="submit-button" style="background-color: #007bff; margin-bottom: 15px;">Tambah Pegawai</button>
+                
                 <div class="form-group">
                     <label for="jenisPengawasan">Jenis Pengawasan:</label>
                     <input type="text" id="jenisPengawasan" name="jenispengawasan" required>
@@ -104,85 +107,172 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Variabel global untuk menyimpan data pegawai yang dimuat dari database.json
     let masterPegawaiData = [];
+    // Array untuk melacak status display setiap blok pegawai
+    let pegawaiBlockStatus = Array(MAX_PEGAWAI).fill(false); // false = hidden, true = shown
+    pegawaiBlockStatus[0] = true; // Pegawai pertama selalu ditampilkan
 
-    // Fungsi untuk menambahkan blok input pegawai baru ke formulir
-    function addPegawaiInputBlock() {
-        const container = document.getElementById('pegawai-input-container');
-        const blockIndex = container.children.length; // Gunakan jumlah elemen anak sebagai indeks untuk ID unik
-
-        const blockHtml = `
-            <div class="pegawai-block" style="border: 1px solid #eee; padding: 15px; margin-bottom: 15px; border-radius: 8px;">
-                <h4>Pegawai #${blockIndex + 1}</h4>
+    // Fungsi untuk membuat HTML blok input pegawai
+    function createPegawaiBlockHtml(index) {
+        return `
+            <div class="pegawai-block" id="pegawai-block-${index}" style="border: 1px solid #eee; padding: 15px; margin-bottom: 15px; border-radius: 8px; ${index > 0 && !pegawaiBlockStatus[index] ? 'display: none;' : ''}">
+                <h4>Pegawai #${index + 1}</h4>
                 <div class="form-group">
-                    <label for="selectNamaPegawai_${blockIndex}">Pilih Nama Pegawai:</label>
-                    <select id="selectNamaPegawai_${blockIndex}" data-index="${blockIndex}" class="select-nama-pegawai" required>
+                    <label for="selectNamaPegawai_${index}">Pilih Nama Pegawai:</label>
+                    <select id="selectNamaPegawai_${index}" data-index="${index}" class="select-nama-pegawai" ${index === 0 ? 'required' : ''}>
                         <option value="">-- Pilih Pegawai --</option>
-                        </select>
+                    </select>
                 </div>
                 <div class="form-group">
-                    <label for="namaPegawaiDisplay_${blockIndex}">Nama:</label>
-                    <input type="text" id="namaPegawaiDisplay_${blockIndex}" name="namapegawai_${blockIndex}" readonly required>
+                    <label for="namaPegawaiDisplay_${index}">Nama:</label>
+                    <input type="text" id="namaPegawaiDisplay_${index}" name="namapegawai${index + 1}" readonly ${index === 0 ? 'required' : ''}>
                 </div>
                 <div class="form-group">
-                    <label for="pangkatPegawaiDisplay_${blockIndex}">Pangkat / Golongan:</label>
-                    <input type="text" id="pangkatPegawaiDisplay_${blockIndex}" name="pangkatpegawai_${blockIndex}" readonly required>
+                    <label for="pangkatPegawaiDisplay_${index}">Pangkat / Golongan:</label>
+                    <input type="text" id="pangkatPegawaiDisplay_${index}" name="pangkatpegawai${index + 1}" readonly ${index === 0 ? 'required' : ''}>
                 </div>
                 <div class="form-group">
-                    <label for="nipPegawaiDisplay_${blockIndex}">NIP:</label>
-                    <input type="text" id="nipPegawaiDisplay_${blockIndex}" name="nippegawai_${blockIndex}" readonly required>
+                    <label for="nipPegawaiDisplay_${index}">NIP:</label>
+                    <input type="text" id="nipPegawaiDisplay_${index}" name="nippegawai${index + 1}" readonly ${index === 0 ? 'required' : ''}>
                 </div>
                 <div class="form-group">
-                    <label for="jabatanPegawaiDisplay_${blockIndex}">Jabatan:</label>
-                    <input type="text" id="jabatanPegawaiDisplay_${blockIndex}" name="jabatanpegawai_${blockIndex}" readonly required>
+                    <label for="jabatanPegawaiDisplay_${index}">Jabatan:</label>
+                    <input type="text" id="jabatanPegawaiDisplay_${index}" name="jabatanpegawai${index + 1}" readonly ${index === 0 ? 'required' : ''}>
                 </div>
-                ${blockIndex > 0 ? '<button type="button" class="remove-pegawai-btn" style="background-color: #dc3545;">Hapus Pegawai Ini</button>' : ''}
+                ${index > 0 ? `<button type="button" class="remove-pegawai-btn" data-index="${index}" style="background-color: #dc3545;">Hapus Pegawai #${index + 1}</button>` : ''}
             </div>
         `;
-        container.insertAdjacentHTML('beforeend', blockHtml);
+    }
 
-        const newSelect = document.getElementById(`selectNamaPegawai_${blockIndex}`);
+    // Fungsi untuk mengisi dropdown dan mengatur auto-fill untuk blok pegawai tertentu
+    function setupPegawaiBlockAutofill(blockIndex) {
+        const selectNamaPegawai = document.getElementById(`selectNamaPegawai_${blockIndex}`);
+        const namaPegawaiDisplay = document.getElementById(`namaPegawaiDisplay_${blockIndex}`);
+        const pangkatPegawaiDisplay = document.getElementById(`pangkatPegawaiDisplay_${blockIndex}`);
+        const nipPegawaiDisplay = document.getElementById(`nipPegawaiDisplay_${blockIndex}`);
+        const jabatanPegawaiDisplay = document.getElementById(`jabatanPegawaiDisplay_${blockIndex}`);
+        
+        // Atur status required berdasarkan apakah blok ditampilkan
+        const isBlockVisible = pegawaiBlockStatus[blockIndex];
+        selectNamaPegawai.required = isBlockVisible; // Dropdown juga harus required
+        namaPegawaiDisplay.required = isBlockVisible;
+        pangkatPegawaiDisplay.required = isBlockVisible;
+        nipPegawaiDisplay.required = isBlockVisible;
+        jabatanPegawaiDisplay.required = isBlockVisible;
+
+        // Isi dropdown dengan data master pegawai
+        selectNamaPegawai.innerHTML = '<option value="">-- Pilih Pegawai --</option>'; // Reset
         masterPegawaiData.forEach(pegawai => {
             const option = document.createElement('option');
-            option.value = pegawai.NIP; // Menggunakan NIP sebagai nilai unik untuk setiap opsi
+            option.value = pegawai.NIP;
             option.textContent = pegawai.Nama;
-            newSelect.appendChild(option);
+            selectNamaPegawai.appendChild(option);
         });
 
-        // Menambahkan event listener untuk auto-fill pada blok baru
-        newSelect.addEventListener('change', function() {
+        // Event listener untuk auto-fill
+        selectNamaPegawai.addEventListener('change', function() {
             const selectedNIP = this.value;
             const selectedPegawai = masterPegawaiData.find(pegawai => pegawai.NIP === selectedNIP);
-            const idx = this.dataset.index; // Mengambil indeks blok dari atribut data-index
 
             if (selectedPegawai) {
-                // Mengisi field display dengan data yang ditemukan
-                document.getElementById(`namaPegawaiDisplay_${idx}`).value = selectedPegawai.Nama;
-                document.getElementById(`pangkatPegawaiDisplay_${idx}`).value = selectedPegawai["Pangkat / Golongan"];
-                document.getElementById(`nipPegawaiDisplay_${idx}`).value = selectedPegawai.NIP;
-                document.getElementById(`jabatanPegawaiDisplay_${idx}`).value = selectedPegawai.Jabatan;
+                namaPegawaiDisplay.value = selectedPegawai.Nama;
+                pangkatPegawaiDisplay.value = selectedPegawai["Pangkat / Golongan"];
+                nipPegawaiDisplay.value = selectedPegawai.NIP;
+                jabatanPegawaiDisplay.value = selectedPegawai.Jabatan;
             } else {
-                // Mengosongkan field jika "-- Pilih Pegawai --" atau NIP tidak ditemukan
-                document.getElementById(`namaPegawaiDisplay_${idx}`).value = '';
-                document.getElementById(`pangkatPegawaiDisplay_${idx}`).value = '';
-                document.getElementById(`nipPegawaiDisplay_${idx}`).value = '';
-                document.getElementById(`jabatanPegawaiDisplay_${idx}`).value = '';
+                namaPegawaiDisplay.value = '';
+                pangkatPegawaiDisplay.value = '';
+                nipPegawaiDisplay.value = '';
+                jabatanPegawaiDisplay.value = '';
             }
+            // Update required state based on selection for currently visible block
+            selectNamaPegawai.required = selectedNIP !== ''; // Required jika ada pilihan
+            namaPegawaiDisplay.required = selectedNIP !== '';
+            pangkatPegawaiDisplay.required = selectedNIP !== '';
+            nipPegawaiDisplay.required = selectedNIP !== '';
+            jabatanPegawaiDisplay.required = selectedNIP !== '';
         });
-
-        // Menambahkan event listener untuk tombol hapus (jika ada) pada blok baru
-        const removeBtn = container.querySelector(`.pegawai-block:last-child .remove-pegawai-btn`);
-        if (removeBtn) {
-            removeBtn.addEventListener('click', function() {
-                this.closest('.pegawai-block').remove(); // Menghapus seluruh blok pegawai
-            });
-        }
     }
 
     // Fungsi untuk memuat data master pegawai dari database.json
     async function loadMasterPegawaiData() {
         try {
-            const response = await fetch('/database.json'); // Mengambil file JSON dari folder 'frontend'
-            masterPegawaiData = await response.json(); // Menyimpan data ke variabel global masterPegawaiData
+            const response = await fetch('/database.json');
+            masterPegawaiData = await response.json();
+            
+            // Generate semua blok pegawai (awalnya sebagian disembunyikan)
+            const pegawaiInputContainer = document.getElementById('pegawai-input-container');
+            for (let i = 0; i < MAX_PEGAWAI; i++) {
+                pegawaiInputContainer.insertAdjacentHTML('beforeend', createPegawaiBlockHtml(i));
+                setupPegawaiBlockAutofill(i); // Setup autofill untuk semua blok
+            }
+
+            // Atur event listener untuk tombol show/hide
+            const togglePegawaiBtn = document.getElementById('toggle-pegawai-btn');
+            if (togglePegawaiBtn) {
+                togglePegawaiBtn.addEventListener('click', () => {
+                    let nextHiddenIndex = -1;
+                    // Cari blok pegawai tersembunyi berikutnya untuk ditampilkan
+                    for (let i = 1; i < MAX_PEGAWAI; i++) { // Mulai dari index 1 (pegawai kedua)
+                        if (!pegawaiBlockStatus[i]) {
+                            nextHiddenIndex = i;
+                            break;
+                        }
+                    }
+
+                    if (nextHiddenIndex !== -1) { // Ada blok yang bisa ditampilkan
+                        const blockToShow = document.getElementById(`pegawai-block-${nextHiddenIndex}`);
+                        blockToShow.style.display = 'block';
+                        pegawaiBlockStatus[nextHiddenIndex] = true;
+                        setupPegawaiBlockAutofill(nextHiddenIndex); // Reset required state and dropdown
+
+                        // Update teks tombol
+                        if (nextHiddenIndex + 1 < MAX_PEGAWAI) {
+                            togglePegawaiBtn.textContent = `Tambah Pegawai #${nextHiddenIndex + 2}`;
+                        } else {
+                            togglePegawaiBtn.style.display = 'none'; // Sembunyikan jika semua blok ditampilkan
+                        }
+                    } else {
+                        // Jika tidak ada lagi blok tersembunyi yang bisa ditampilkan
+                        togglePegawaiBtn.style.display = 'none';
+                    }
+                });
+            }
+
+            // Atur event listener untuk tombol hapus pada setiap blok (kecuali yang pertama)
+            // Menggunakan event delegation untuk tombol hapus
+            pegawaiInputContainer.addEventListener('click', (event) => {
+                if (event.target.classList.contains('remove-pegawai-btn')) {
+                    const blockIndexToRemove = parseInt(event.target.dataset.index);
+                    const blockToRemove = document.getElementById(`pegawai-block-${blockIndexToRemove}`);
+                    
+                    blockToRemove.style.display = 'none';
+                    pegawaiBlockStatus[blockIndexToRemove] = false;
+                    
+                    // Kosongkan dan non-aktifkan required untuk blok yang disembunyikan
+                    const inputs = blockToRemove.querySelectorAll('input, select');
+                    inputs.forEach(input => {
+                        input.required = false;
+                        input.value = '';
+                    });
+                    
+                    // Update tombol toggle
+                    togglePegawaiBtn.style.display = 'block'; // Pastikan tombol tambah muncul lagi
+                    // Set teks tombol ke nomor pegawai pertama yang tersembunyi
+                    let firstHiddenIndex = -1;
+                    for(let i = 1; i < MAX_PEGAWAI; i++) {
+                        if (!pegawaiBlockStatus[i]) {
+                            firstHiddenIndex = i;
+                            break;
+                        }
+                    }
+                    if (firstHiddenIndex !== -1) {
+                         togglePegawaiBtn.textContent = `Tambah Pegawai #${firstHiddenIndex + 1}`;
+                    } else {
+                        togglePegawaiBtn.style.display = 'none'; // Sembunyikan jika semua blok ditampilkan
+                    }
+                }
+            });
+
         } catch (error) {
             console.error('Gagal memuat data pegawai master:', error);
         }
@@ -190,61 +280,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Fungsi untuk menangani submit formulir Surat Tugas (SPT)
     function setupSptFormSubmission() {
-        // Panggil ini saat formulir SPT dimuat untuk pertama kali
-        loadMasterPegawaiData().then(() => {
-            addPegawaiInputBlock(); // Tambah satu blok pegawai secara default saat form SPT terbuka
-            const addPegawaiBtn = document.getElementById('add-pegawai-btn');
-            if (addPegawaiBtn) {
-                addPegawaiBtn.addEventListener('click', () => addPegawaiInputBlock()); // Event untuk tombol "Tambah Pegawai"
-            }
-        });
+        loadMasterPegawaiData(); // Muat data master pegawai
 
         const sptForm = document.getElementById('spt-form');
         const responseMessage = document.getElementById('response-message');
 
         if (sptForm) {
             sptForm.addEventListener('submit', async function(e) {
-                e.preventDefault(); // Mencegah halaman reload saat submit
+                e.preventDefault();
 
-                // Mengambil data untuk setiap pegawai yang ditambahkan secara dinamis
-                const pegawaiBlocks = document.querySelectorAll('.pegawai-block');
-                const daftarPegawai = []; // Array untuk menyimpan data setiap pegawai
-
-                pegawaiBlocks.forEach((block, index) => { // 'index' ini adalah nomor 0, 1, 2, dst.
-                    const nama = block.querySelector(`[name="namapegawai_${index}"]`).value;
-                    const pangkat = block.querySelector(`[name="pangkatpegawai_${index}"]`).value;
-                    const nip = block.querySelector(`[name="nippegawai_${index}"]`).value;
-                    const jabatan = block.querySelector(`[name="jabatanpegawai_${index}"]`).value;
-
-                    if (nama && nip) { // Hanya tambahkan ke array jika Nama dan NIP terisi
-                        daftarPegawai.push({
-                            nomorUrut: index + 1, // <--- BARU: Nomor urut dimulai dari 1
-                            namapegawai: nama,
-                            pangkatpegawai: pangkat,
-                            nippegawai: nip,
-                            jabatanpegawai: jabatan
-                        });
+                const data = {};
+                // Ambil data untuk setiap pegawai hingga MAX_PEGAWAI
+                for (let i = 0; i < MAX_PEGAWAI; i++) {
+                    const block = document.getElementById(`pegawai-block-${i}`);
+                    // Pastikan blok ada dan visible (tidak display: none)
+                    if (block && block.style.display !== 'none' && document.getElementById(`selectNamaPegawai_${i}`).value !== '') { 
+                        data[`namapegawai${i + 1}`] = document.getElementById(`namaPegawaiDisplay_${i}`).value;
+                        data[`pangkatpegawai${i + 1}`] = document.getElementById(`pangkatPegawaiDisplay_${i}`).value;
+                        data[`nippegawai${i + 1}`] = document.getElementById(`nipPegawaiDisplay_${i}`).value;
+                        data[`jabatanpegawai${i + 1}`] = document.getElementById(`jabatanPegawaiDisplay_${i}`).value;
+                    } else {
+                        // Jika blok tidak ditampilkan atau tidak ada pilihan, kirim string kosong
+                        // Ini penting agar placeholder di dokumen tidak undefined dan barisnya bisa hilang (kondisional)
+                        data[`namapegawai${i + 1}`] = '';
+                        data[`pangkatpegawai${i + 1}`] = '';
+                        data[`nippegawai${i + 1}`] = '';
+                        data[`jabatanpegawai${i + 1}`] = '';
                     }
-                });
-
-                // Validasi: pastikan setidaknya ada satu pegawai yang ditambahkan
-                if (daftarPegawai.length === 0) {
-                    responseMessage.textContent = 'Harap tambahkan setidaknya satu pegawai.';
-                    responseMessage.style.color = 'red';
-                    return;
                 }
 
                 const formData = new FormData(sptForm);
-                const data = {
-                    // Kirim array daftarPegawai
-                    daftarPegawai: daftarPegawai,
-                    jenispengawasan: formData.get('jenispengawasan'),
-                    opd: formData.get('opd'),
-                    tanggalmulai: formData.get('tanggalmulai'),
-                    tanggalberakhir: formData.get('tanggalberakhir')
-                };
+                data['jenispengawasan'] = formData.get('jenispengawasan');
+                data['opd'] = formData.get('opd');
+                data['tanggalmulai'] = formData.get('tanggalmulai');
+                data['tanggalberakhir'] = formData.get('tanggalberakhir');
 
-                // Mendapatkan Bulan dan Tahun dari tanggalmulai untuk placeholder {bulan} dan {tahun}
+                // Tanggal untuk {bulan} dan {tahun}
                 const tanggalMulai = new Date(formData.get('tanggalmulai'));
                 const bulanOptions = { month: 'long' };
                 const bulanNama = tanggalMulai.toLocaleDateString('id-ID', bulanOptions);
@@ -257,29 +328,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 responseMessage.style.color = 'orange';
 
                 try {
-                    // Panggil Netlify Function Anda
                     const response = await fetch('/.netlify/functions/generate-document', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(data)
                     });
 
-                    if (!response.ok) { // Jika ada kesalahan HTTP (misal 404, 500)
-                        const errorBody = await response.json(); // Coba ambil JSON error
+                    if (!response.ok) {
+                        const errorBody = await response.json();
                         throw new Error(`HTTP error! Status: ${response.status}. Pesan: ${errorBody.message || JSON.stringify(errorBody)}`);
                     }
 
-                    // Mengambil respons dari Netlify Function sebagai Blob (binary data)
                     const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob); // Membuat URL sementara dari Blob
-
-                    const a = document.createElement('a'); // Membuat elemen <a> untuk unduh
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
                     a.href = url;
-                    a.download = 'Surat_Tugas.docx'; // Nama file saat diunduh
-                    document.body.appendChild(a); // Menambahkan <a> ke DOM (untuk bisa diklik)
-                    a.click(); // Klik <a> secara otomatis untuk memulai unduhan
-                    a.remove(); // Hapus <a> setelah unduhan dimulai
-                    window.URL.revokeObjectURL(url); // Membebaskan URL sementara
+                    a.download = 'Surat_Tugas.docx';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
 
                     responseMessage.textContent = 'Dokumen berhasil dibuat dan diunduh!';
                     responseMessage.style.color = 'green';
@@ -293,7 +361,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Loop melalui setiap link di submenu
+    // Loop melalui setiap link di submenu (Tidak Berubah)
     submenuLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
@@ -303,7 +371,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (templateType === 'spt') {
                 formContainer.innerHTML = sptFormHtml;
-                setupSptFormSubmission(); // Panggil fungsi untuk menangani submit form SPT
+                setupSptFormSubmission();
             } else if (templateType === 'sppd') {
                 formContainer.innerHTML = sppdFormHtml;
             }

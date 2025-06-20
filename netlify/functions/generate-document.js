@@ -1,16 +1,13 @@
 const Docxtemplater = require('docxtemplater');
 const PizZip = require('pizzip');
-const { DOMParser } = require('xmldom'); // Pastikan ini 'xmldom', bukan '@xm-l/xmldom'
+const { DOMParser } = require('xmldom');
 const path = require('path');
-const fs = require('fs'); // Modul File System bawaan Node.js untuk membaca file
+const fs = require('fs');
 
-// Tentukan path ke template DOCX Anda
 const TEMPLATE_FILE_NAME = 'template_spt.docx';
 const TEMPLATE_PATH = path.resolve(__dirname, TEMPLATE_FILE_NAME);
 
-// Fungsi utama Netlify Function
 exports.handler = async function(event, context) {
-    // Memastikan hanya permintaan POST yang diterima
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
@@ -20,7 +17,6 @@ exports.handler = async function(event, context) {
 
     let content;
     try {
-        // Membaca isi file template DOCX secara biner
         content = fs.readFileSync(TEMPLATE_PATH, 'binary');
     } catch (readError) {
         console.error("Error membaca template_spt.docx:", readError);
@@ -35,52 +31,59 @@ exports.handler = async function(event, context) {
     }
 
     try {
-        // Mengambil data yang dikirim dari formulir (front-end)
         const data = JSON.parse(event.body);
 
         const zip = new PizZip(content);
         const doc = new Docxtemplater(zip, {
-            paragraphLoop: true, // Penting untuk perulangan paragraf
+            paragraphLoop: true,
             linebreaks: true,
-            // Perubahan di sini: Menggunakan parser bawaan Docxtemplater yang lebih canggih.
-            // Ini diperlukan untuk menangani tag khusus seperti @@+1.
+            // Parser standar yang akan bekerja dengan placeholder nama tunggal dan tag kondisional (.{tag})
             parser: (tag) => {
                 const parse = Docxtemplater.L.getParser(tag, {
-                    // Konfigurasi default L.getParser
-                    // Anda bisa menambahkan opsi kustom jika diperlukan,
-                    // tetapi untuk @@+1, ini seharusnya cukup.
+                    // Konfigurasi default L.getParser, mungkin diperlukan untuk tag kondisional
                 });
                 return {
                     get: (scope) => {
-                        // Jika tag adalah "@@+1", kita harus menangani ini secara khusus
-                        // atau biarkan parser bawaan Docxtemplater menanganinya.
-                        if (tag.startsWith('@@')) {
-                             // Ini adalah cara Docxtemplater menangani tag internal seperti @ @
+                        // Jika tag adalah tag internal Docxtemplater, biarkan parser bawaan menanganinya
+                        if (tag.startsWith('@')) { // Handles @@+1, @foo, etc.
                              return parse(scope);
                         }
-                        return scope[tag];
+                        // Untuk tag kondisional seperti .namapegawai2, kita perlu memastikan data valid
+                        if (tag.startsWith('.')) {
+                            const actualTag = tag.substring(1); // Remove the dot
+                            return !!scope[actualTag]; // Return true if the data exists and is not empty/null/false
+                        }
+                        return scope[tag]; // Default: get value directly from scope
                     }
                 };
             }
         });
 
         // ISI DATA KE TEMPLATE
-        // 'daftarPegawai' adalah sebuah array yang berisi objek-objek pegawai
-        doc.setData({
-            daftarPegawai: data.daftarPegawai || [], // Data array untuk perulangan
+        // Data diterima sebagai individual key untuk setiap pegawai
+        const templateData = {
             jenispengawasan: data.jenispengawasan || '[Jenis Pengawasan Kosong]',
             opd: data.opd || '[OPD Kosong]',
             tanggalmulai: data.tanggalmulai || '[Tanggal Mulai Kosong]',
             tanggalberakhir: data.tanggalberakhir || '[Tanggal Berakhir Kosong]',
             bulan: data.bulan || '[Bulan Kosong]',
             tahun: data.tahun || '[Tahun Kosong]',
-        });
+        };
+
+        // Tambahkan data pegawai ke templateData
+        for (let i = 1; i <= MAX_PEGAWAI; i++) {
+            templateData[`namapegawai${i}`] = data[`namapegawai${i}`] || '';
+            templateData[`pangkatpegawai${i}`] = data[`pangkatpegawai${i}`] || '';
+            templateData[`nippegawai${i}`] = data[`nippegawai${i}`] || '';
+            templateData[`jabatanpegawai${i}`] = data[`jabatanpegawai${i}`] || '';
+        }
+
+        doc.setData(templateData);
 
         try {
-            doc.render(); // Proses pengisian template dengan data
+            doc.render();
         } catch (error) {
             console.error("Error saat rendering dokumen:", error);
-            // Tambahkan detail error Docxtemplater untuk debugging yang lebih baik
             if (error.properties) {
                 console.error(JSON.stringify({
                     message: error.message,
@@ -100,7 +103,6 @@ exports.handler = async function(event, context) {
             compression: 'DEFLATE',
         });
 
-        // Mengirim file DOCX kembali ke front-end
         return {
             statusCode: 200,
             headers: {
